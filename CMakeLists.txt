@@ -4,6 +4,7 @@ project(Korik)
 
 set(SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
 set(SOURCES "${SRC_DIR}/client.cpp")
+#set(SOURCES "${SRC_DIR}/server.cpp")
 
 find_package(cpprestsdk REQUIRED)
 

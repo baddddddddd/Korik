@@ -1,4 +1,5 @@
-#pragma once
+#ifndef QUEUE_HPP
+#define QUEUE_HPP
 
 #include "linked_list.hpp"
 
@@ -28,3 +29,5 @@ public:
     }
 
 };
+
+#endif // QUEUE_HPP

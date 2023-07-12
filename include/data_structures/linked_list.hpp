@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LINKED_LIST_HPP
+#define LINKED_LIST_HPP
 
 #include <iostream>
 
@@ -27,6 +28,24 @@ public:
 
     T back() {
         return tail->data;
+    }
+
+    T& operator[](int index) {
+        Node* current = head;
+
+        for (int i = 0; i < index; i++) {
+            if (!current) {
+                throw std::runtime_error("Index out of range.");
+            }
+
+            current = current->next;
+        }
+
+        if (!current) {
+            throw std::runtime_error("Index out of range.");
+        }
+
+        return current->data;
     }
 
     void push_back(const T value) {
@@ -188,3 +207,5 @@ public:
         std::cout << std::endl;
     }
 };
+
+#endif // LINKED_LIST_HPP

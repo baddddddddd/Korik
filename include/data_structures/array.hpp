@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ARRAY_HPP
+#define ARRAY_HPP
 
 #include <iostream>
 #include <string>
@@ -115,3 +116,4 @@ public:
     }
 };
 
+#endif // ARRAY_HPP

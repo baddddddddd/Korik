@@ -1,5 +1,6 @@
 #include <data_structures/avl_tree.hpp>
 #include <user.hpp>
+#include <answers.hpp>
 
 #include <functional>
 #include <iostream>
@@ -52,9 +53,72 @@ bool create_user(User new_user) {
     // TK
 }
 
-void show_student_dashboard() {
+bool check_exam_code(std::string code) {
     // TK
+    
+    return true;
+}
 
+void upload_answers(const Answers& answers) {
+    // TK
+}
+
+void input_exam(int number_of_items) {
+    system(CLEAR_SCREEN);
+
+    int current_number = 1;
+
+    Answers answers;
+
+    while (current_number <= number_of_items) {
+        auto answer = get_line(std::to_string(current_number) + ". ");
+
+        if (answer == "-") {
+            answers.undo_answer();
+            current_number--;
+
+            system(CLEAR_SCREEN);
+
+            for (int i = 0; i < current_number - 1; i++) {
+                std::cout << (i + 1) << ". " << answers[i] << std::endl;
+            }
+
+        } else {
+            answers.add_answer(answer);
+            current_number++;
+        }
+    }
+
+    upload_answers(answers);
+
+    std::cout << "\nAnswer sheet was submitted successfully.\n";
+    system(PAUSE);
+}
+
+void start_exam() {
+    // TK
+    
+    system(CLEAR_SCREEN);
+
+    std::cout << "======= EXAM ========\n";
+    
+    auto exam_code = get_line("Exam code: ");
+
+    if (check_exam_code(exam_code)) {
+        // TK
+        input_exam(10);
+
+    } else {
+        std::cout << "\nExam code does not exist...\n";
+        system(PAUSE);
+    }
+}
+
+void show_exam_history() {
+    // TK
+}
+
+void show_student_dashboard() {
     system(CLEAR_SCREEN);
 
     std::cout << "======= STUDENT DASHBOARD =======\n";
@@ -68,10 +132,10 @@ void show_student_dashboard() {
     auto answer = get_line("\nAnswer: ");
 
     if (answer == "1") {
-        // TK
+        start_exam();
 
     } else if (answer == "2") {
-        // TK
+        show_exam_history();
 
     } else if (answer == "3") {
         return;
@@ -107,10 +171,10 @@ void show_login_ui() {
         return show_student_dashboard();
 
     } else {
-        // TK
+        std::cout << "\nIncorrect username or password. Please try again...\n";
+        system(PAUSE);
+        return;
     }
-
-    system(PAUSE);
 }
 
 void show_registration_ui() {
@@ -150,13 +214,15 @@ void show_registration_ui() {
     );
 
     if (create_user(new_user)) {
-        // TK
+        std::cout << "\nAccount successfully created. Returning to main menu...\n";
+        system(PAUSE);
+        return;
 
     } else {
-        // TK
-    }
- 
-    system(PAUSE);
+        std::cout << "\nFailed to create new user. Username or email is already taken...\n";
+        system(PAUSE);
+        return;
+    } 
 }
 
 void show_main_menu() {
