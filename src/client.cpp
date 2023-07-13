@@ -21,7 +21,7 @@ using namespace web;
 using namespace web::http;
 using namespace web::http::client;
 
-User* user;
+User* user = NULL;
 
 json::value send_post_request(const utility::string_t& endpoint, const json::value& post_data) {
     uri_builder builder(endpoint);
@@ -69,11 +69,41 @@ std::string hash_password(std::string password) {
 }
 
 bool verify_login(std::string username, std::string password) {
-    std::cout << "Username: " << username << std::endl;
-    std::cout << "Password: " << password << std::endl;
-    return true;
+    auto hashed_pw = hash_password(password);
+    
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(username);
+    body[U("pw_hash")] = TO_JSON_STRING(hashed_pw);
 
-    // TK
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/login"), body);
+
+    if (response.has_field(U("success"))) {
+        auto is_success = get_value(response, "success");
+        
+        if (is_success == "true") {
+            if (user != NULL) {
+                delete user;
+            }
+
+            user = new User(
+                "0",
+                username,
+                hashed_pw,
+                get_value(response, "email_address"),
+                get_value(response, "last_name"),
+                get_value(response, "first_name"),
+                get_value(response, "middle_name")
+            );
+
+            return true;
+
+        } else {
+            return false;
+        }
+
+    } else {
+        return false;
+    }
 }
 
 bool create_user(User& new_user) {
@@ -199,18 +229,6 @@ void show_login_ui() {
     auto password = get_line("Password: ");
 
     if (verify_login(username, password)) {
-        // TK
-
-        user = new User(
-            "22-08367",
-            "vladi02",
-            "awdawda",
-            "22-08367@g.batstate-u.edu.ph",
-            "Jocson",
-            "Vladimir",
-            "Magsino"
-        );
-
         return show_student_dashboard();
 
     } else {

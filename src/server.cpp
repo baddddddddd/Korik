@@ -4,6 +4,8 @@
 #include <user.hpp>
 #include <data_structures/avl_tree.hpp>
 
+#define TO_JSON_STRING(s) json::value::string(utility::conversions::to_string_t(s))
+
 using namespace web;
 using namespace http;
 using namespace http::experimental::listener;
@@ -44,6 +46,28 @@ public:
         } catch (std::runtime_error& e) {
             return false;
         }        
+    }
+
+    bool verify_login(std::string username, std::string pw_hash) {
+        User user(
+            "0",
+            username,
+            pw_hash,
+            "0",
+            "0",
+            "0",
+            "0"
+        );
+
+        auto result = users.search(user);
+
+        if (result != NULL) {
+            auto queried_user = result->data;
+            return queried_user.get_password_hash() == pw_hash;
+
+        } else {
+            return false;
+        }
     }
 
     std::string get_value(const json::value& dict, const std::string& key) {
@@ -89,6 +113,39 @@ public:
                 const json::value& post_data = task.get();
 
                 if (path == "/login") {
+                    std::cout << "Logging in: \n";
+
+                    auto username = get_value(post_data, "username");
+                    auto pw_hash = get_value(post_data, "pw_hash");
+
+                    bool success = verify_login(username, pw_hash);
+
+                    json::value response;
+
+                    if (success) {
+                        auto user = users.search(User(
+                            "0",
+                            username,
+                            pw_hash,
+                            "0",
+                            "0",
+                            "0",
+                            "0"
+                        ))->data;
+
+                        response[U("success")] = TO_JSON_STRING("true");
+                        response[U("username")] = TO_JSON_STRING(user.get_username());
+                        response[U("email_address")] = TO_JSON_STRING(user.get_email_address());
+                        response[U("last_name")] = TO_JSON_STRING(user.get_last_name());
+                        response[U("first_name")] = TO_JSON_STRING(user.get_first_name());
+                        response[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
+
+                    } else {
+                        response[U("success")] = TO_JSON_STRING("false");
+                    }
+                
+                    request.reply(status_codes::OK, response);
+                    return;
 
                 } else if (path == "/register") {
                     std::cout << "registering: \n";
