@@ -17,7 +17,10 @@ private:
     std::string first_name;
     std::string middle_name;
 
+
 public:
+    bool is_instructor;
+    
     User(
         std::string id,
         std::string username,
@@ -25,7 +28,8 @@ public:
         std::string email_address,
         std::string last_name,
         std::string first_name,
-        std::string middle_name
+        std::string middle_name,
+        bool is_instructor = false
     ) : 
         id(id), 
         username(username), 
@@ -33,40 +37,47 @@ public:
         email_address(email_address), 
         last_name(last_name), 
         first_name(first_name), 
-        middle_name(middle_name)
+        middle_name(middle_name),
+        is_instructor(is_instructor)
     {
     }
 
     bool operator<(const User& other) const {
-        return last_name < other.last_name
-            && first_name < other.first_name
-            && middle_name < other.middle_name;
+        return username < other.username;
+        // return last_name < other.last_name
+        //     && first_name < other.first_name
+        //     && middle_name < other.middle_name;
     }
 
     bool operator>(const User& other) const {
-        return last_name > other.last_name
-            && first_name > other.first_name
-            && middle_name > other.middle_name;
+        return username > other.username;
+        // return last_name > other.last_name
+        //     && first_name > other.first_name
+        //     && middle_name > other.middle_name;
     }
 
     bool operator<=(const User& other) const {
-        return last_name <= other.last_name
-            && first_name <= other.first_name
-            && middle_name <= other.middle_name;
+        return username <= other.username;
+        // return last_name <= other.last_name
+        //     && first_name <= other.first_name
+        //     && middle_name <= other.middle_name;
     }
 
     bool operator>=(const User& other) const {
-        return last_name >= other.last_name
-            && first_name >= other.first_name
-            && middle_name >= other.middle_name;
+        return username >= other.username;
+        // return last_name >= other.last_name
+        //     && first_name >= other.first_name
+        //     && middle_name >= other.middle_name;
     }
 
     bool operator==(const User& other) const {
-        bool has_same_username = username == other.username;
-        bool has_same_email = email_address == other.email_address;
-        bool has_same_name = last_name == other.last_name && first_name == other.first_name && middle_name == other.middle_name;
-        
-        return has_same_username || has_same_email || has_same_name;
+        return username == other.username;
+
+        // bool has_same_username = username == other.username;
+        // bool has_same_email = email_address == other.email_address;
+        // bool has_same_name = last_name == other.last_name && first_name == other.first_name && middle_name == other.middle_name;
+        // 
+        // return has_same_username || has_same_email || has_same_name;
     }
 
     bool operator!=(const User& other) const {

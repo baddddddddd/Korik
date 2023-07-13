@@ -85,6 +85,12 @@ bool verify_login(std::string username, std::string password) {
                 delete user;
             }
 
+            bool is_instructor = false;
+
+            if (response.has_field(U("is_instructor"))) {
+                is_instructor = true;
+            }
+
             user = new User(
                 "0",
                 username,
@@ -92,7 +98,8 @@ bool verify_login(std::string username, std::string password) {
                 get_value(response, "email_address"),
                 get_value(response, "last_name"),
                 get_value(response, "first_name"),
-                get_value(response, "middle_name")
+                get_value(response, "middle_name"),
+                is_instructor
             );
 
             return true;
@@ -114,6 +121,10 @@ bool create_user(User& new_user) {
     body[U("last_name")] = TO_JSON_STRING(new_user.get_last_name());
     body[U("first_name")] = TO_JSON_STRING(new_user.get_first_name());
     body[U("middle_name")] = TO_JSON_STRING(new_user.get_middle_name());
+
+    if (new_user.is_instructor) {
+        body[U("is_instructor")] = TO_JSON_STRING("true");
+    }
     
     auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/register"), body);
 
@@ -191,6 +202,51 @@ void show_exam_history() {
     // TK
 }
 
+void show_create_exam_ui() {
+    // TK
+}
+
+void show_view_exams_ui() {
+    // TK
+}
+
+void show_delete_exam_ui() {
+    // TK
+}
+
+void show_instructor_dashboard() {
+    system(CLEAR_SCREEN);
+
+    std::cout << "======= INSTRUCTOR DASHBOARD =======\n";
+    std::cout << "Logged in as: " << user->get_last_name() << ", " << user->get_first_name() << " " << user->get_middle_name() << std::endl;
+    
+    std::cout << std::endl;
+    std::cout << "[1] Create exam\n";
+    std::cout << "[2] View exams\n";
+    std::cout << "[3] Delete exam\n";
+    std::cout << "[4] Logout\n";
+
+    auto answer = get_line("\nAnswer: ");
+
+    if (answer == "1") {
+        show_create_exam_ui();
+
+    } else if (answer == "2") {
+        show_view_exams_ui();
+
+    } else if (answer == "3") {
+        show_delete_exam_ui();
+
+    } else if (answer == "4") {
+        return;
+
+    } else {
+        show_invalid_answer();
+    }
+
+    return show_instructor_dashboard();
+}
+
 void show_student_dashboard() {
     system(CLEAR_SCREEN);
 
@@ -229,7 +285,12 @@ void show_login_ui() {
     auto password = get_line("Password: ");
 
     if (verify_login(username, password)) {
-        return show_student_dashboard();
+        if (user->is_instructor) {
+            return show_instructor_dashboard();
+
+        } else {
+            return show_student_dashboard();
+        }
 
     } else {
         std::cout << "\nIncorrect username or password. Please try again...\n";
@@ -240,6 +301,25 @@ void show_login_ui() {
 
 void show_registration_ui() {
     system(CLEAR_SCREEN);
+
+    std::cout << "Which one describes you?\n";
+    std::cout << "[1] Student\n";
+    std::cout << "[2] Instructor\n";
+
+    auto answer = get_line("\nAnswer: ");
+    bool is_instructor;
+
+    if (answer == "1") {
+        is_instructor = false;
+
+    } else if (answer == "2") {
+        is_instructor = true;
+
+    } else {
+        std::cout << "\nInvalid answer. Please try again...\n";
+        system(PAUSE);
+        return show_registration_ui();
+    }
 
     std::cout << "Please enter your information\n";
     
@@ -271,7 +351,8 @@ void show_registration_ui() {
         email_address,
         last_name,
         first_name,
-        middle_name
+        middle_name,
+        is_instructor
     );
 
     if (create_user(new_user)) {

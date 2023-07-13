@@ -4,18 +4,75 @@
 #include <user.hpp>
 #include <data_structures/avl_tree.hpp>
 
+#include <fstream>
+
 #define TO_JSON_STRING(s) json::value::string(utility::conversions::to_string_t(s))
 
 using namespace web;
 using namespace http;
 using namespace http::experimental::listener;
 
+
+
 AVLTree<User> users;
+
 
 class RestApiHandler
 {
 public:
-    RestApiHandler() {}
+    json::value user_db;
+    int user_count = 0;
+
+    RestApiHandler() {
+        std::string json_string;
+        std::ifstream input_file("user_db.json");
+
+        if (input_file.is_open()) {
+            std::getline(input_file, json_string);
+            input_file.close();
+
+            user_db = json::value::parse(utility::conversions::to_string_t(json_string));
+                        
+            for (const auto& user_json : user_db.as_array()) {
+                bool is_instructor = false;
+
+                if (user_json.has_field(U("is_instructor"))) {
+                    is_instructor = true;
+                }
+
+                User user(
+                    "0",
+                    get_value(user_json, "username"),
+                    get_value(user_json, "pw_hash"),
+                    get_value(user_json, "email_address"),
+                    get_value(user_json, "last_name"),
+                    get_value(user_json, "first_name"),
+                    get_value(user_json, "middle_name"),
+                    is_instructor
+                );
+
+                users.insert(user);
+
+                user_count++;
+            }
+
+        } else {
+            std::cout << "Failed to open the file." << std::endl;
+        }
+    }
+
+    ~RestApiHandler() {
+        std::string serialized = utility::conversions::to_utf8string(user_db.serialize());
+        std::ofstream output_file("user_db.json");
+
+        if (output_file.is_open()) {
+            output_file << serialized;
+            output_file.close();
+            std::cout << "String saved to the file successfully." << std::endl;
+        } else {
+            std::cout << "Failed to open the file." << std::endl;
+        }
+    }
 
     bool create_user(
         std::string username,
@@ -23,7 +80,8 @@ public:
         std::string email_address,
         std::string last_name,
         std::string first_name,
-        std::string middle_name
+        std::string middle_name,
+        bool is_instructor = false
     ) {
         User user(
             "0",
@@ -32,14 +90,30 @@ public:
             email_address,
             last_name,
             first_name,
-            middle_name
+            middle_name,
+            is_instructor
         );
 
         try {
-            users.insert(user);  
+            users.insert(user);
+
+            json::value user_info;
+            user_info[U("username")] = TO_JSON_STRING(user.get_username());
+            user_info[U("email_address")] = TO_JSON_STRING(user.get_email_address());
+            user_info[U("pw_hash")] = TO_JSON_STRING(user.get_password_hash());
+            user_info[U("last_name")] = TO_JSON_STRING(user.get_last_name());
+            user_info[U("first_name")] = TO_JSON_STRING(user.get_first_name());
+            user_info[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
+
+            if (is_instructor) {
+                user_info[U("is_instructor")] = TO_JSON_STRING("true");
+            }
+
+            user_db[user_count] = user_info;
+            user_count++;
             
             std::cout << "Registered: ";
-            user.print_info();  
+            user.print_info();
             
             return true;
 
@@ -140,6 +214,10 @@ public:
                         response[U("first_name")] = TO_JSON_STRING(user.get_first_name());
                         response[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
 
+                        if (user.is_instructor) {
+                            response[U("is_instructor")] = TO_JSON_STRING("true");
+                        }
+
                     } else {
                         response[U("success")] = TO_JSON_STRING("false");
                     }
@@ -157,13 +235,20 @@ public:
                     auto first_name = get_value(post_data, "first_name");
                     auto middle_name = get_value(post_data, "middle_name");
 
+                    bool is_instructor = false;
+
+                    if (post_data.has_field(U("is_instructor"))) {
+                        is_instructor = true;
+                    }
+
                     bool success = create_user(
                         username,
                         pw_hash,
                         email_address,
                         last_name,
                         first_name,
-                        middle_name
+                        middle_name,
+                        is_instructor
                     );
                     
                     json::value response;
@@ -177,20 +262,6 @@ public:
 
                 }
 
-                // Access individual fields of the POST data
-                if (post_data.has_field(U("message")))
-                {
-                    const std::wstring& messageW = post_data.at(U("message")).as_string();
-                    std::string message(messageW.begin(), messageW.end());
-                    std::cout << "Received message: " << message << std::endl;
-                }
-
-                if (post_data.has_field(U("id")))
-                {
-                    const std::wstring& idW = post_data.at(U("id")).as_string();
-                    std::string id(idW.begin(), idW.end());
-                    std::cout << "Received ID: " << id << std::endl;
-                }
 
                 // Process the POST data
                 // ...
