@@ -38,23 +38,25 @@ public:
 
             user_db = json::value::parse(utility::conversions::to_string_t(json_string));
                         
-            for (const auto& user_json : user_db.as_array()) {
-                bool is_instructor = false;
+            for (auto& user_json : user_db.as_array()) {
+                // bool is_instructor = false;
+// 
+                // if (user_json.has_field(U("is_instructor"))) {
+                //     is_instructor = true;
+                // }
+// 
+                // User user(
+                //     "0",
+                //     get_value(user_json, "username"),
+                //     get_value(user_json, "pw_hash"),
+                //     get_value(user_json, "email_address"),
+                //     get_value(user_json, "last_name"),
+                //     get_value(user_json, "first_name"),
+                //     get_value(user_json, "middle_name"),
+                //     is_instructor
+                // );
 
-                if (user_json.has_field(U("is_instructor"))) {
-                    is_instructor = true;
-                }
-
-                User user(
-                    "0",
-                    get_value(user_json, "username"),
-                    get_value(user_json, "pw_hash"),
-                    get_value(user_json, "email_address"),
-                    get_value(user_json, "last_name"),
-                    get_value(user_json, "first_name"),
-                    get_value(user_json, "middle_name"),
-                    is_instructor
-                );
+                auto user = to_user(user_json);
 
                 users.insert(user);
 
@@ -75,22 +77,23 @@ public:
 
             exam_db = json::value::parse(utility::conversions::to_string_t(exam_db_string));
                         
-            for (const auto& exam_json : exam_db.as_array()) {
-                Exam exam(
-                    get_value(exam_json, "uploader"),
-                    get_value(exam_json, "title"),
-                    get_value(exam_json, "code")
-                );
+            for (auto& exam_json : exam_db.as_array()) {
+                // Exam exam(
+                //     get_value(exam_json, "uploader"),
+                //     get_value(exam_json, "title"),
+                //     get_value(exam_json, "code")
+                // );
+// 
+                // json::value answer_key = exam_json.at(U("answer_key"));
+// 
+                // for (const auto& item : answer_key.as_array()) {
+                //     auto answer_w = item.as_string();
+                //     std::string answer(answer_w.begin(), answer_w.end());
+// 
+                //     exam.answer_key.push_back(answer);
+                // }
 
-                json::value answer_key = exam_json.at(U("answer_key"));
-
-                for (const auto& item : answer_key.as_array()) {
-                    auto answer_w = item.as_string();
-                    std::string answer(answer_w.begin(), answer_w.end());
-
-                    exam.answer_key.push_back(answer);
-                }
-
+                auto exam = to_exam(exam_json);
                 exams.insert(exam);
                 exam_count++;
             }
@@ -125,6 +128,177 @@ public:
         }
     }
 
+    json::value to_json_value(Exam& exam) {
+        json::value json_value;
+
+        json::value answer_key;
+        for (int i = 0; i < exam.answer_key.get_size(); i++) {
+            answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
+        }
+
+        json_value[U("uploader")] = TO_JSON_STRING(exam.uploader);
+        json_value[U("code")] = TO_JSON_STRING(exam.exam_code);
+        json_value[U("title")] = TO_JSON_STRING(exam.title);
+        json_value[U("answer_key")] = answer_key;
+
+        if (exam.scores.get_root() != NULL) {
+            json::value scores;
+            int score_count = 0;
+
+            auto current = exam.scores.subtree_first(exam.scores.get_root());
+
+            while (current) {
+                Score& score = current->data;
+                auto score_json = to_json_value(score);
+                scores[score_count] = score_json;
+                score_count++;
+
+                try {
+                    current = exam.scores.successor(current);
+                
+                } catch (std::runtime_error& e) {
+                    break;
+                }
+            }
+
+            json_value[U("scores")] = scores;
+        }
+
+        return json_value;
+    }
+
+    json::value to_json_value(User& user) {
+        json::value user_info;
+        user_info[U("username")] = TO_JSON_STRING(user.get_username());
+        user_info[U("email_address")] = TO_JSON_STRING(user.get_email_address());
+        user_info[U("pw_hash")] = TO_JSON_STRING(user.get_password_hash());
+        user_info[U("last_name")] = TO_JSON_STRING(user.get_last_name());
+        user_info[U("first_name")] = TO_JSON_STRING(user.get_first_name());
+        user_info[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
+
+        if (user.is_instructor) {
+            user_info[U("is_instructor")] = TO_JSON_STRING("true");
+        }
+
+        if (!user.submitted_scores.empty()) {
+            json::value scores;
+
+            for (int i = 0; i < user.score_count; i++) {
+                scores[i] = to_json_value(user.submitted_scores[i]);
+            }
+
+            user_info[U("scores")] = scores;
+        }
+
+        if (!user.submitted_exams.empty()) {
+            json::value exams;
+
+            for (int i = 0; i < user.exam_count; i++) {
+                exams[i] = to_json_value(user.submitted_exams[i]);
+            }
+
+            user_info[U("exams")] = exams;
+        }
+
+        return user_info;
+    }
+
+    json::value to_json_value(Score& score) {
+        json::value json_value;
+
+        json::value answers;
+        for (int i = 0; i < score.answers.get_size(); i++) {
+            answers[i] = TO_JSON_STRING(score.answers[i]);
+        }
+
+        json_value[U("uploader")] = TO_JSON_STRING(score.uploader);
+        json_value[U("code")] = TO_JSON_STRING(score.exam_code);
+        json_value[U("answers")] = answers;
+        
+        return json_value;
+    }
+
+    Exam to_exam(json::value& json_value) {
+        auto uploader = get_value(json_value, "uploader");
+        auto code = get_value(json_value, "code");
+        auto title = get_value(json_value, "title");
+        
+        Exam exam(uploader, title, code);
+
+        auto answer_key = json_value.at(U("answer_key")).as_array();
+        for (auto& answer : answer_key) {
+            auto answer_w = answer.as_string();
+            std::string answer_string(answer_w.begin(), answer_w.end());
+            exam.answer_key.push_back(answer_string);
+        }
+
+        if (json_value.has_field(U("scores"))) {
+            auto scores = json_value.at(U("scores")).as_array();
+
+            for (auto& score : scores) {
+                exam.scores.insert(to_score(score));
+                exam.score_count++;
+            }
+        }
+
+        return exam;
+    }
+
+    User to_user(json::value& user_json) {
+        bool is_instructor = false;
+
+        if (user_json.has_field(U("is_instructor"))) {
+            is_instructor = true;
+        }
+
+        User user(
+            "0",
+            get_value(user_json, "username"),
+            get_value(user_json, "pw_hash"),
+            get_value(user_json, "email_address"),
+            get_value(user_json, "last_name"),
+            get_value(user_json, "first_name"),
+            get_value(user_json, "middle_name"),
+            is_instructor
+        );
+
+        if (user_json.has_field(U("scores"))) {
+            auto scores = user_json.at(U("scores")).as_array();
+
+            for (auto& score : scores) {
+                user.submitted_scores.push_back(to_score(score));
+                user.score_count++;
+            }
+        }
+
+        if (user_json.has_field(U("exams"))) {
+            auto exams = user_json.at(U("exams")).as_array();
+
+            for (auto& exam : exams) {
+                user.submitted_exams.push_back(to_exam(exam));
+                user.exam_count++;
+            }
+        }
+
+        return user;
+    }
+
+    Score to_score(json::value& json_value) {
+        auto uploader = get_value(json_value, "uploader");
+        auto code = get_value(json_value, "code");
+        auto answers = json_value.at(U("answers")).as_array();
+
+        Score score(uploader, code);
+
+        for (auto& answer : answers) {
+            auto answer_w = answer.as_string();
+            auto answer_string = std::string(answer_w.begin(), answer_w.end());
+            score.answers.push_back(answer_string);
+        }
+
+        return score;
+    }
+
     bool create_user(
         std::string username,
         std::string password_hash,
@@ -148,17 +322,17 @@ public:
         try {
             users.insert(user);
 
-            json::value user_info;
-            user_info[U("username")] = TO_JSON_STRING(user.get_username());
-            user_info[U("email_address")] = TO_JSON_STRING(user.get_email_address());
-            user_info[U("pw_hash")] = TO_JSON_STRING(user.get_password_hash());
-            user_info[U("last_name")] = TO_JSON_STRING(user.get_last_name());
-            user_info[U("first_name")] = TO_JSON_STRING(user.get_first_name());
-            user_info[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
-
-            if (is_instructor) {
-                user_info[U("is_instructor")] = TO_JSON_STRING("true");
-            }
+            json::value user_info = to_json_value(user);
+            // user_info[U("username")] = TO_JSON_STRING(user.get_username());
+            // user_info[U("email_address")] = TO_JSON_STRING(user.get_email_address());
+            // user_info[U("pw_hash")] = TO_JSON_STRING(user.get_password_hash());
+            // user_info[U("last_name")] = TO_JSON_STRING(user.get_last_name());
+            // user_info[U("first_name")] = TO_JSON_STRING(user.get_first_name());
+            // user_info[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
+// 
+            // if (is_instructor) {
+            //     user_info[U("is_instructor")] = TO_JSON_STRING("true");
+            // }
 
             user_db[user_count] = user_info;
             user_count++;
@@ -206,18 +380,18 @@ public:
         try {
             exams.insert(exam);
 
-            json::value exam_info;
-            exam_info[U("uploader")] = TO_JSON_STRING(exam.uploader);
-            exam_info[U("title")] = TO_JSON_STRING(exam.title);
-            exam_info[U("code")] = TO_JSON_STRING(exam.exam_code);
-
-            json::value answer_key;
-
-            for (int i = 0; i < exam.answer_key.get_size(); i++) {
-                answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
-            }
-
-            exam_info[U("answer_key")] = answer_key;
+            json::value exam_info = to_json_value(exam);
+            /// exam_info[U("uploader")] = TO_JSON_STRING(exam.uploader);
+            /// exam_info[U("title")] = TO_JSON_STRING(exam.title);
+            /// exam_info[U("code")] = TO_JSON_STRING(exam.exam_code);
+/// 
+            /// json::value answer_key;
+/// 
+            /// for (int i = 0; i < exam.answer_key.get_size(); i++) {
+            ///     answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
+            /// }
+/// 
+            /// exam_info[U("answer_key")] = answer_key;
 
             exam_db[exam_count] = exam_info;
             exam_count++;
@@ -422,7 +596,6 @@ public:
                     }
 
                     auto& exam = exams.search(Exam(code))->data;
-
                     exam.scores.insert(score);
 
                     auto& user = users.search(User(uploader))->data;
@@ -432,6 +605,7 @@ public:
 
                     // TKK WRITE TO JSON UNDER EXAM
                     // TKK WRITE TO JSON UNDER USERS
+                    // TKK RETURN SCORE
 
                     json::value response;
                     response[U("success")] = json::value::string(success ? U("true") : U("false"));

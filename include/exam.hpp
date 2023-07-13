@@ -18,6 +18,7 @@ public:
     std::string exam_code;
     Array<std::string> answer_key;
     AVLTree<Score> scores;
+    int score_count = 0;
 
     Exam(std::string code)
         : exam_code(code)

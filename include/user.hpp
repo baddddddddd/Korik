@@ -25,6 +25,9 @@ public:
     bool is_instructor;
     LinkedList<Exam> submitted_exams;
     LinkedList<Score> submitted_scores;
+
+    int exam_count = 0;
+    int score_count = 0;
     
     User(std::string username) 
         : username(username)
