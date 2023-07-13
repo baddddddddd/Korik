@@ -2,6 +2,9 @@
 #include <user.hpp>
 #include <answers.hpp>
 
+#include <cpprest/http_client.h>
+#include <cpprest/json.h>
+
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -10,7 +13,37 @@
 #define CLEAR_SCREEN "cls"
 #define PAUSE "pause"
 
+#define SERVER_URL std::string("http://localhost:8080")
+
+#define TO_JSON_STRING(s) json::value::string(utility::conversions::to_string_t(s))
+
+using namespace web;
+using namespace web::http;
+using namespace web::http::client;
+
 User* user;
+
+json::value send_post_request(const utility::string_t& endpoint, const json::value& post_data) {
+    uri_builder builder(endpoint);
+    http_client client(builder.to_string());
+
+    http_request request(methods::POST);
+    request.headers().set_content_type(U("application/json"));
+    request.set_body(post_data);
+
+    return client.request(request)
+        .then([](http_response response) {
+            return response.extract_json();
+        })
+        .get();
+}
+
+std::string get_value(const json::value& dict, const std::string& key) {
+    const std::wstring& value_w = dict.at(utility::conversions::to_string_t(key)).as_string();
+    std::string value(value_w.begin(), value_w.end());
+
+    return value;
+}
 
 std::string get_line(std::string prompt = "Answer: ") {
     std::cout << prompt;
@@ -43,14 +76,24 @@ bool verify_login(std::string username, std::string password) {
     // TK
 }
 
-bool create_user(User new_user) {
-    std::string a = new_user.get_username();
+bool create_user(User& new_user) {
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(new_user.get_username());
+    body[U("email_address")] = TO_JSON_STRING(new_user.get_email_address());
+    body[U("pw_hash")] = TO_JSON_STRING(new_user.get_password_hash());
+    body[U("last_name")] = TO_JSON_STRING(new_user.get_last_name());
+    body[U("first_name")] = TO_JSON_STRING(new_user.get_first_name());
+    body[U("middle_name")] = TO_JSON_STRING(new_user.get_middle_name());
+    
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/register"), body);
 
-    std::cout << "Username: " << new_user.get_username() << std::endl;
-    std::cout << "Email Address: " << new_user.get_email_address() << std::endl;
-
-    return true;
-    // TK
+    if (response.has_field(U("success"))) {
+        auto is_success = get_value(response, "success");
+        return is_success == "true";
+    
+    } else {
+        return false;
+    }
 }
 
 bool check_exam_code(std::string code) {
