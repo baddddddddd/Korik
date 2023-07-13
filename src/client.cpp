@@ -138,65 +138,128 @@ bool create_user(User& new_user) {
     }
 }
 
-bool check_exam_code(std::string code) {
-    // TK
-    
-    return true;
+int check_exam_code(std::string code) {
+    json::value body;
+    body[U("code")] = TO_JSON_STRING(code);
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/check_exam"), body);
+
+    if (response.has_field(U("success"))) {
+        if (get_value(response, "success") == "true") {
+            auto number_of_items = response.at(U("number_of_items")).as_number().to_int32();
+            auto title = get_value(response, "title");
+            return number_of_items;
+
+        } else {
+            return 0;
+        }
+
+    } else {
+        return 0;
+    }    
 }
 
-void upload_answers(const Answers& answers) {
-    // TK
-}
-
-void input_exam(int number_of_items) {
+Answers* input_exam(int number_of_items, std::string title) {
     system(CLEAR_SCREEN);
 
     int current_number = 1;
 
-    Answers answers;
+    Answers* answers = new Answers;
+
+    std::cout << "======= TAKING EXAM =======\n";
+    std::cout << "Title: " << title << std::endl;
 
     while (current_number <= number_of_items) {
         auto answer = get_line(std::to_string(current_number) + ". ");
 
         if (answer == "-") {
-            answers.undo_answer();
-            current_number--;
+            if (current_number > 1) {
+                answers->undo_answer();
+                current_number--;
+            }
 
             system(CLEAR_SCREEN);
 
+            std::cout << "======= TAKING EXAM =======\n";
+            std::cout << "Title: " << title << std::endl;
+
             for (int i = 0; i < current_number - 1; i++) {
-                std::cout << (i + 1) << ". " << answers[i] << std::endl;
+                std::cout << (i + 1) << ". " << (*answers)[i] << std::endl;
             }
 
         } else {
-            answers.add_answer(answer);
+            answers->add_answer(answer);
             current_number++;
         }
     }
 
-    upload_answers(answers);
+    return answers;
+}
 
-    std::cout << "\nAnswer sheet was submitted successfully.\n";
-    system(PAUSE);
+void upload_score(Score& score) {
+    json::value body;
+    body[U("uploader")] = TO_JSON_STRING(score.uploader);
+    body[U("code")] = TO_JSON_STRING(score.exam_code);
+
+    json::value answers;
+
+    for (int i = 0; i < score.answers.get_size(); i++) {
+        answers[i] = TO_JSON_STRING(score.answers[i]);
+    }
+
+    body[U("answers")] = answers;
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/upload_score"), body);
+
+    if (response.has_field(U("success")) && get_value(response, "success") == "true") {
+        std::cout << "\nSuccessfully uploaded exam\n";
+        // TKK DISPLAY SCORE
+        system(PAUSE);
+
+    } else {
+        std::cout << "\nFailed to upload exam.\n";
+        system(PAUSE);
+    }
 }
 
 void start_exam() {
-    // TK
-    
     system(CLEAR_SCREEN);
 
-    std::cout << "======= EXAM ========\n";
+    std::cout << "======= STARTING EXAM ========\n";
     
-    auto exam_code = get_line("Exam code: ");
+    auto code = get_line("Exam code: ");
 
-    if (check_exam_code(exam_code)) {
-        // TK
-        input_exam(10);
+    int number_of_items;
+    std::string title;
+
+    json::value body;
+    body[U("code")] = TO_JSON_STRING(code);
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/check_exam"), body);
+
+    if (response.has_field(U("success")) && get_value(response, "success") == "true") {
+        number_of_items = response.at(U("number_of_items")).as_number().to_int32();
+        title = get_value(response, "title");
 
     } else {
-        std::cout << "\nExam code does not exist...\n";
+        std::cout << "\nInvalid exam code. Please try again...\n";
         system(PAUSE);
+        return start_exam();
+    }   
+
+    auto answers = input_exam(number_of_items, title);
+
+    Score score(user->get_username(), code);
+
+    for (int i = 0; i < number_of_items; i++) {
+        score.answers.push_back((*answers)[i]);
     }
+
+    upload_score(score);
+
+    // TK RECEIVE GRADE
+
+    delete answers;
 }
 
 void show_exam_history() {

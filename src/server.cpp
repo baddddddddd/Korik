@@ -4,6 +4,7 @@
 #include <user.hpp>
 #include <data_structures/avl_tree.hpp>
 #include <exam.hpp>
+#include <score.hpp>
 
 #include <fstream>
 
@@ -372,20 +373,75 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
+                } else if (path == "/check_exam") {
+                    std::cout << "Checking exam code: " << std::endl;
+
+                    auto code = get_value(post_data, "code");
+
+                    auto exam_node = exams.search(Exam(code));
+
+                    bool success = exam_node != NULL;
+
+                    json::value response;
+                    response[U("success")] = json::value::string(success ? U("true") : U("false"));
+
+                    if (success) {
+                        auto exam = exam_node->data;
+                        response[U("number_of_items")] = exam.answer_key.get_size();
+                        response[U("title")] = TO_JSON_STRING(exam.title);
+                    }
+
+                    request.reply(status_codes::OK, response);
+                    return;
+
+                } else if (path == "/upload_score") {
+                    std::cout << "Uploading score: " << std::endl;
+
+                    auto uploader = get_value(post_data, "uploader");
+                    auto code = get_value(post_data, "code");
+
+                    Score score(uploader, code);
+
+                    std::cout << "Uploader: " << uploader << std::endl;
+                    std::cout << "Code: " << code << std::endl;
+
+                    auto answers = post_data.at(U("answers")).as_array();
+
+                    std::cout << "Answers: " << std::endl;
+
+                    int counter = 1;
+                    for (const auto& item : answers) {
+                        auto item_w = item.as_string();
+                        std::string item(item_w.begin(), item_w.end());
+
+                        score.answers.push_back(item);
+
+                        std::cout << counter << ". " << item << std::endl;
+                        
+                        counter++;
+                    }
+
+                    auto& exam = exams.search(Exam(code))->data;
+
+                    exam.scores.insert(score);
+
+                    auto& user = users.search(User(uploader))->data;
+                    user.submitted_scores.push_back(score);
+
+                    bool success = true;
+
+                    // TKK WRITE TO JSON UNDER EXAM
+                    // TKK WRITE TO JSON UNDER USERS
+
+                    json::value response;
+                    response[U("success")] = json::value::string(success ? U("true") : U("false"));
+                    request.reply(status_codes::OK, response);
+                    return;
+
                 } else {
 
                 }
 
-
-                // Process the POST data
-                // ...
-
-                // Prepare the response
-                // json::value response;
-                // response[U("message")] = json::value::string(U("POST request received and processed"));
-// 
-                // // Send the response
-                // request.reply(status_codes::OK, response);
             }
             catch (const std::exception& ex) {
                 // Handle errors

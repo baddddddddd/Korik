@@ -4,6 +4,10 @@
 #include <iostream>
 #include <string>
 
+#include "data_structures/linked_list.hpp"
+#include "exam.hpp"
+#include "score.hpp"
+
 class User {
 private:
     std::string id;
@@ -17,10 +21,15 @@ private:
     std::string first_name;
     std::string middle_name;
 
-
 public:
     bool is_instructor;
+    LinkedList<Exam> submitted_exams;
+    LinkedList<Score> submitted_scores;
     
+    User(std::string username) 
+        : username(username)
+    {}
+
     User(
         std::string id,
         std::string username,
