@@ -1,6 +1,7 @@
 #include <data_structures/avl_tree.hpp>
 #include <user.hpp>
 #include <answers.hpp>
+#include <exam.hpp>
 
 #include <cpprest/http_client.h>
 #include <cpprest/json.h>
@@ -199,18 +200,104 @@ void start_exam() {
 }
 
 void show_exam_history() {
+    system(CLEAR_SCREEN);
+
+
     // TK
+}
+
+Exam create_exam(std::string title, std::string code, int number_of_items) {
+    system(CLEAR_SCREEN);
+
+    Exam exam(user->get_username(), title, code);
+
+    std::cout << "======= ANSWER KEY CREATION =======\n";
+    std::cout << "Exam Title: " << title << std::endl;
+    std::cout << "Exam Code: " << code << std::endl;
+    std::cout << "Answer Key: " << std::endl;
+
+    int current_number = 1;
+
+    while (current_number <= number_of_items) {
+        std::cout << current_number << ". ";
+
+        auto answer = get_line("");
+
+        exam.answer_key.push_back(answer);
+
+        current_number++;
+    }
+
+    return exam;
 }
 
 void show_create_exam_ui() {
-    // TK
+    system(CLEAR_SCREEN);
+
+    std::cout << "======= EXAM CREATION =======\n";
+    
+    auto title = get_line("Title: ");
+    auto code = get_line("Exam entry code: ");
+    int number_of_items;
+
+    while (true) {
+        auto answer = get_line("Number of items: ");
+
+        try {
+            number_of_items = std::stoi(answer);
+
+            if (number_of_items <= 0) {
+                throw std::exception();
+            }
+
+            break;
+
+        } catch (std::exception& e) {
+            std::cout << "Invalid number. Please try again...\n";
+            system(PAUSE);
+            std::cout << std::endl;
+        }
+    }
+
+    auto exam = create_exam(title, code, number_of_items);
+
+    json::value answer_key;
+
+    for (int i = 0; i < number_of_items; i++) {        
+        answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
+    } 
+
+    json::value body;
+    body[U("uploader")] = TO_JSON_STRING(user->get_username());
+    body[U("title")] = TO_JSON_STRING(title);
+    body[U("code")] = TO_JSON_STRING(code);
+    body[U("answer_key")] = answer_key;
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/create_exam"), body);
+
+    if (response.has_field(U("success"))) {
+        if (get_value(response, "success") == "true") {
+            std::cout << "\nSuccessfully uploaded exam with code: \n";
+            std::cout << code << std::endl << std::endl;
+            system(PAUSE);
+        } else {
+            std::cout << "\nFailed to create exam. Exam code may be taken already...\n";
+            system(PAUSE);
+        }
+
+    } else {
+        std::cout << "\nFailed to create exam. Exam code may be taken already...\n";
+        system(PAUSE);
+    }
 }
 
 void show_view_exams_ui() {
+    system(CLEAR_SCREEN);
     // TK
 }
 
 void show_delete_exam_ui() {
+    system(CLEAR_SCREEN);
     // TK
 }
 

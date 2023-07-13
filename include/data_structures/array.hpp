@@ -35,6 +35,17 @@ public:
         delete[] arr;
     }
 
+    Array(const Array& other) {
+        size = other.size;
+        capacity = other.capacity;
+
+        arr = new T[capacity];
+
+        for (int i = 0; i < size; i++) {
+            arr[i] = other.arr[i];
+        }
+    }
+
     int get_size() {
         return size;
     }

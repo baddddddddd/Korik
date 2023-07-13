@@ -3,6 +3,7 @@
 
 #include <user.hpp>
 #include <data_structures/avl_tree.hpp>
+#include <exam.hpp>
 
 #include <fstream>
 
@@ -15,12 +16,15 @@ using namespace http::experimental::listener;
 
 
 AVLTree<User> users;
+AVLTree<Exam> exams;
 
 
 class RestApiHandler
 {
 public:
     json::value user_db;
+    json::value exam_db;
+    int exam_count = 0;
     int user_count = 0;
 
     RestApiHandler() {
@@ -59,6 +63,40 @@ public:
         } else {
             std::cout << "Failed to open the file." << std::endl;
         }
+
+        // Processing exam db file
+        std::string exam_db_string;
+        std::ifstream exam_db_file("exam_db.json");
+
+        if (exam_db_file.is_open()) {
+            std::getline(exam_db_file, exam_db_string);
+            exam_db_file.close();
+
+            exam_db = json::value::parse(utility::conversions::to_string_t(exam_db_string));
+                        
+            for (const auto& exam_json : exam_db.as_array()) {
+                Exam exam(
+                    get_value(exam_json, "uploader"),
+                    get_value(exam_json, "title"),
+                    get_value(exam_json, "code")
+                );
+
+                json::value answer_key = exam_json.at(U("answer_key"));
+
+                for (const auto& item : answer_key.as_array()) {
+                    auto answer_w = item.as_string();
+                    std::string answer(answer_w.begin(), answer_w.end());
+
+                    exam.answer_key.push_back(answer);
+                }
+
+                exams.insert(exam);
+                exam_count++;
+            }
+
+        } else {
+            std::cout << "Failed to open exam db file." << std::endl;
+        }
     }
 
     ~RestApiHandler() {
@@ -68,6 +106,18 @@ public:
         if (output_file.is_open()) {
             output_file << serialized;
             output_file.close();
+            std::cout << "String saved to the file successfully." << std::endl;
+        } else {
+            std::cout << "Failed to open the file." << std::endl;
+        }
+
+        // Process exam db
+        std::string exam_db_string = utility::conversions::to_utf8string(exam_db.serialize());
+        std::ofstream exam_db_file("exam_db.json");
+
+        if (exam_db_file.is_open()) {
+            exam_db_file << exam_db_string;
+            exam_db_file.close();
             std::cout << "String saved to the file successfully." << std::endl;
         } else {
             std::cout << "Failed to open the file." << std::endl;
@@ -149,6 +199,38 @@ public:
         std::string value(value_w.begin(), value_w.end());
 
         return value;
+    }
+
+    bool create_exam(Exam& exam) {
+        try {
+            exams.insert(exam);
+
+            json::value exam_info;
+            exam_info[U("uploader")] = TO_JSON_STRING(exam.uploader);
+            exam_info[U("title")] = TO_JSON_STRING(exam.title);
+            exam_info[U("code")] = TO_JSON_STRING(exam.exam_code);
+
+            json::value answer_key;
+
+            for (int i = 0; i < exam.answer_key.get_size(); i++) {
+                answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
+            }
+
+            exam_info[U("answer_key")] = answer_key;
+
+            exam_db[exam_count] = exam_info;
+            exam_count++;
+
+            std::cout << "Created exam: \n";
+            std::cout << "Uploader: " << exam.uploader << std::endl;
+            std::cout << "Title: " << exam.title << std::endl;
+            std::cout << "Code: " << exam.exam_code << std::endl;
+
+            return true;
+        
+        } catch (std::runtime_error& e) {
+            return false;
+        }
     }
 
     void handle_get(http_request request) {
@@ -256,7 +338,39 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
-                } else if (path == "exam") {
+                } else if (path == "/create_exam") {
+                    std::cout << "Creating exam: \n";
+
+                    auto uploader = get_value(post_data, "uploader");
+                    auto title = get_value(post_data, "title");
+                    auto code = get_value(post_data, "code");
+
+                    std::cout << "Uploader: " << uploader << std::endl;
+                    std::cout << "Title: " << title << std::endl;
+                    std::cout << "Exam code: " << code << std::endl;
+                    std::cout << "Answer Key: " << std::endl;
+
+                    json::value answer_key = post_data.at(U("answer_key"));
+
+                    Exam exam(uploader, title, code);
+
+                    int counter = 1;
+                    for (const auto& item : answer_key.as_array()) {
+                        auto answer_w = item.as_string();
+                        std::string answer(answer_w.begin(), answer_w.end());
+
+                        exam.answer_key.push_back(answer);
+
+                        std::cout << counter << ". " << answer << std::endl;
+                        counter++;
+                    }
+
+                    bool success = create_exam(exam);
+
+                    json::value response;
+                    response[U("success")] = json::value::string(success ? U("true") : U("false"));
+                    request.reply(status_codes::OK, response);
+                    return;
 
                 } else {
 
