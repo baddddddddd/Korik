@@ -37,6 +37,42 @@ public:
     {
     }
 
+    bool operator<(const User& other) const {
+        return last_name < other.last_name
+            && first_name < other.first_name
+            && middle_name < other.middle_name;
+    }
+
+    bool operator>(const User& other) const {
+        return last_name > other.last_name
+            && first_name > other.first_name
+            && middle_name > other.middle_name;
+    }
+
+    bool operator<=(const User& other) const {
+        return last_name <= other.last_name
+            && first_name <= other.first_name
+            && middle_name <= other.middle_name;
+    }
+
+    bool operator>=(const User& other) const {
+        return last_name >= other.last_name
+            && first_name >= other.first_name
+            && middle_name >= other.middle_name;
+    }
+
+    bool operator==(const User& other) const {
+        bool has_same_username = username == other.username;
+        bool has_same_email = email_address == other.email_address;
+        bool has_same_name = last_name == other.last_name && first_name == other.first_name && middle_name == other.middle_name;
+        
+        return has_same_username || has_same_email || has_same_name;
+    }
+
+    bool operator!=(const User& other) const {
+        return !(*this == other);
+    }    
+
     std::string get_username() {
         return username;
     }

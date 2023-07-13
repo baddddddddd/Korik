@@ -54,7 +54,7 @@ private:
 
     void insert_next(Node* node, T value) {
         if (node->data == value) {
-            return;
+            throw std::runtime_error("Value already exists in the AVL Tree.");
         }
 
         auto& next_node = (value < node->data) ? node->left : node->right;

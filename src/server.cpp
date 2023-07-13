@@ -2,19 +2,20 @@
 #include <cpprest/json.h>
 
 #include <user.hpp>
+#include <data_structures/avl_tree.hpp>
 
 using namespace web;
 using namespace http;
 using namespace http::experimental::listener;
 
-
+AVLTree<User> users;
 
 class RestApiHandler
 {
 public:
     RestApiHandler() {}
 
-    void create_user(
+    bool create_user(
         std::string username,
         std::string password_hash,
         std::string email_address,
@@ -32,8 +33,17 @@ public:
             middle_name
         );
 
-        std::cout << "Registered: ";
-        user.print_info();
+        try {
+            users.insert(user);  
+            
+            std::cout << "Registered: ";
+            user.print_info();  
+            
+            return true;
+
+        } catch (std::runtime_error& e) {
+            return false;
+        }        
     }
 
     std::string get_value(const json::value& dict, const std::string& key) {
@@ -90,7 +100,7 @@ public:
                     auto first_name = get_value(post_data, "first_name");
                     auto middle_name = get_value(post_data, "middle_name");
 
-                    create_user(
+                    bool success = create_user(
                         username,
                         pw_hash,
                         email_address,
@@ -100,7 +110,7 @@ public:
                     );
                     
                     json::value response;
-                    response[U("success")] = json::value::string(U("true"));
+                    response[U("success")] = json::value::string(success ? U("true") : U("false"));
                     request.reply(status_codes::OK, response);
                     return;
 
