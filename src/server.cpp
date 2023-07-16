@@ -693,6 +693,7 @@ public:
                     response[U("answers")] = answers;
                     response[U("answer_key")] = answer_key;
                     
+                    response[U("title")] = TO_JSON_STRING(exam.title);
                     response[U("item_count")] = exam.answer_key.get_size();
                     response[U("score_count")] = exam.score_count;
 

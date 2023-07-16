@@ -460,9 +460,50 @@ void show_exam_search_ui() {
         return;
     }
 
-    // TKKK
+    system(CLEAR_SCREEN);
 
-    std::cout << "taken the exam alr\n";
+    auto title = get_value(response, "title");
+    auto item_count = response.at(U("item_count")).as_integer();
+    auto score_count = response.at(U("score_count")).as_integer();
+
+    auto answers = response.at(U("answers")).as_array();
+    auto answer_key = response.at(U("answer_key")).as_array();
+
+    int grade = 0;
+    for (int i = 0; i < item_count; i++) {
+        auto answer_w = answers[i].as_string();
+        std::string answer_str(answer_w.begin(), answer_w.end());
+
+        auto answer_key_w = answer_key[i].as_string();
+        std::string answer_key_str(answer_key_w.begin(), answer_key_w.end());
+
+        if (answer_str == answer_key_str) {
+            grade++;
+        }
+    }
+
+    std::cout << "======= EXAM RESULT =======\n";
+    std::cout << "Title: " << title << std::endl;
+    std::cout << "Exam code: " << code << std::endl;
+    std::cout << "Score: " << grade << "/" << item_count << std::endl;
+    std::cout << "Answers: \n"; 
+
+    for (int i = 0; i < item_count; i++) {
+        auto answer_w = answers[i].as_string();
+        std::string answer_str(answer_w.begin(), answer_w.end());
+
+        auto answer_key_w = answer_key[i].as_string();
+        std::string answer_key_str(answer_key_w.begin(), answer_key_w.end());
+
+        std::cout << (i + 1) << ". " << answer_str;
+        if (answer_str != answer_key_str) {
+            std::cout << " -> " << answer_key_str;
+        }
+
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
     system(PAUSE);
 }
 
