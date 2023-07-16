@@ -256,16 +256,48 @@ void start_exam() {
 
     upload_score(score);
 
-    // TK RECEIVE GRADE
-
     delete answers;
 }
 
 void show_exam_history() {
     system(CLEAR_SCREEN);
 
+    std::cout << "======= EXAM HISTORY =======\n";
 
-    // TK
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/get_exams"), body);
+
+    if (response.has_field(U("count"))) {
+        int count = response.at(U("count")).as_integer();
+
+        if (count > 0) {
+            auto scores = response.at(U("scores")).as_array();
+
+            int counter = 1;
+            for (auto& score : scores) {
+                auto code = get_value(score, "code");
+                auto title = get_value(score, "title");
+                auto grade = score.at(U("grade")).as_integer();
+                auto item_count = score.at(U("item_count")).as_integer();
+
+                std::cout << counter << ". " << title << " (" << code << ")" << " - " << grade << "/" << item_count << std::endl;
+
+                counter++;
+            }
+
+            system(PAUSE);
+
+        } else {
+            std::cout << "\nYou haven't taken any exams yet.\n";
+            system(PAUSE);
+        }
+
+    } else {
+        std::cout << "\nSomething went wrong\n";
+        system(PAUSE);
+    }
+    // TKKK show results
 }
 
 Exam create_exam(std::string title, std::string code, int number_of_items) {

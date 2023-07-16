@@ -603,6 +603,52 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
+                } else if (path == "/get_exams") {
+                    std::cout << "Getting exams for: ";
+
+                    auto username = get_value(post_data, "username");
+                    
+                    std::cout << username << std::endl;
+
+                    auto user = users.search(User(username))->data;
+
+                    json::value response;
+
+                    if (user.score_count > 0) {
+                        response[U("count")] = user.score_count;
+
+                        json::value scores;
+
+                        for (int i = 0; i < user.score_count; i++) {
+                            Score& score = user.submitted_scores[i];
+                            Exam& exam = exams.search(Exam(score.exam_code))->data;
+
+                            json::value result;
+                            result[U("code")] = TO_JSON_STRING(exam.exam_code);
+                            result[U("title")] = TO_JSON_STRING(exam.title);
+                            result[U("item_count")] = exam.answer_key.get_size();
+
+                            int grade = 0;
+                            for (int i = 0; i < exam.answer_key.get_size(); i++) {
+                                if (score.answers[i] == exam.answer_key[i]) {
+                                    grade++;
+                                }
+                            }
+
+                            result[U("grade")] = grade;
+
+                            scores[i] = result;
+                        }
+
+                        response[U("scores")] = scores;
+
+                    } else {
+                        response[U("count")] = 0;
+                    }
+
+                    request.reply(status_codes::OK, response);
+                    return;
+
                 } else {
 
                 }
