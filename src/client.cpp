@@ -2,6 +2,7 @@
 #include <user.hpp>
 #include <answers.hpp>
 #include <exam.hpp>
+#include <score.hpp>
 
 #include <cpprest/http_client.h>
 #include <cpprest/json.h>
@@ -384,20 +385,113 @@ void show_create_exam_ui() {
     }
 }
 
+Score to_score(json::value& json_value) {
+    auto uploader = get_value(json_value, "uploader");
+    auto code = get_value(json_value, "code");
+    auto answers = json_value.at(U("answers")).as_array();
+
+    Score score(uploader, code);
+
+    for (auto& answer : answers) {
+        auto answer_w = answer.as_string();
+        auto answer_string = std::string(answer_w.begin(), answer_w.end());
+        score.answers.push_back(answer_string);
+    }
+
+    return score;
+}
+
+Exam to_exam(json::value& json_value) {
+    auto uploader = get_value(json_value, "uploader");
+    auto code = get_value(json_value, "code");
+    auto title = get_value(json_value, "title");
+    
+    Exam exam(uploader, title, code);
+
+    auto answer_key = json_value.at(U("answer_key")).as_array();
+    for (auto& answer : answer_key) {
+        auto answer_w = answer.as_string();
+        std::string answer_string(answer_w.begin(), answer_w.end());
+        exam.answer_key.push_back(answer_string);
+    }
+
+    if (json_value.has_field(U("scores"))) {
+        auto scores = json_value.at(U("scores")).as_array();
+
+        for (auto& score : scores) {
+            exam.scores.insert(to_score(score));
+            exam.score_count++;
+        }
+    }
+
+    return exam;
+}
+
 void show_item_analysis(std::string code) {
     system(CLEAR_SCREEN);
 
     json::value body;
     body[U("username")] = TO_JSON_STRING(user->get_username());
     body[U("code")] = TO_JSON_STRING(code);
-    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/view_exams"), body);
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/view_exam"), body);
 
+    auto exam_json = response.at(U("exam")); 
+    Exam& exam = to_exam(exam_json);
 
     std::cout << "======= EXAM ITEM ANALYSIS =======\n";
+    std::cout << "Title: " << exam.title << std::endl;
+    std::cout << "Code: " << exam.exam_code << std::endl;
+    
+    if (!exam.scores.get_root()) {
+        std::cout << "\nNo one has taken this exam yet.\n";
+        system(PAUSE);
+        return;
+    }
 
+    AVLTree<Score>::Node* current = NULL;
+    
+    int* item_correct = new int[exam.answer_key.get_size()];
 
-    // TKK
+    for (int i = 0; i < exam.answer_key.get_size(); i++) {
+        item_correct[i] = 0;
+    }
+
+    int score_sum = 0;
+
+    for (int i = 0; i < exam.score_count; i++) {
+        if (!current) {
+            current = exam.scores.subtree_first(exam.scores.get_root());
+        } else {
+            current = exam.scores.successor(current);
+        }
+
+        Score& score = current->data;
+
+        int grade = 0;
+        for (int j = 0; j < exam.answer_key.get_size(); j++) {
+            if (exam.answer_key[j] == score.answers[j]) {
+                grade++;
+                item_correct[j]++;
+            }
+        }
+
+        score_sum += grade;
+    }
+
+    float average = (float)score_sum / exam.score_count;
+
+    std::cout << "Mean Score: " << average << std::endl;    
+    std::cout << "\nNumber of correct answers per item: " << std::endl;
+
+    for (int i = 0; i < exam.answer_key.get_size(); i++) {
+        float percentage = ((float)item_correct[i] / exam.score_count) * 100;
+        std::cout << (i + 1) << ". " << item_correct[i] << "/" << exam.score_count << " = " << percentage << "%\n";
+    }
+
+    std::cout << std::endl;
     system(PAUSE);
+
+    delete[] item_correct;
 }
 
 void show_view_exams_ui() {

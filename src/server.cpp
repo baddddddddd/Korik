@@ -734,6 +734,30 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
+                } else if (path == "/view_exam") {
+                    std::cout << "View item analysis of exam: ";
+
+                    auto username = get_value(post_data, "username");
+                    auto code = get_value(post_data, "code");
+
+                    std::cout << code << std::endl;
+
+                    User& user = users.search(User(username))->data;
+                    Exam& exam = exams.search(Exam(code))->data;
+
+                    auto exam_json = to_json_value(exam);
+
+                    json::value response;
+                    response[U("exam")] = exam_json;
+                    request.reply(status_codes::OK, response);
+                    return;
+
+                } else if (path == "/view_rankings") {
+                    std::cout << "Viewing rankings for: ";
+
+                    
+                }
+
                 } else {
 
                 }

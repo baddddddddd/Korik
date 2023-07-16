@@ -5,7 +5,7 @@
 
 template <typename T>
 class AVLTree {
-private:
+public:
     struct Node {
         int height = 0;
 
@@ -218,7 +218,6 @@ private:
         }
     }
 
-public:
     AVLTree()
         : root(NULL)
     {
