@@ -213,11 +213,10 @@ void upload_score(Score& score) {
 
     if (response.has_field(U("success")) && get_value(response, "success") == "true") {
         std::cout << "\nSuccessfully uploaded exam\n";
-        // TKK DISPLAY SCORE
         system(PAUSE);
 
     } else {
-        std::cout << "\nFailed to upload exam.\n";
+        std::cout << "\nFailed to upload exam. You may have already taken the exam.\n"; 
         system(PAUSE);
     }
 }

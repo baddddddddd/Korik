@@ -582,20 +582,22 @@ public:
                         counter++;
                     }
 
-                    auto& exam = exams.search(Exam(code))->data;
-                    exam.scores.insert(score);
-                    exam.score_count++;
-
-                    auto& user = users.search(User(uploader))->data;
-                    user.submitted_scores.push_back(score);
-                    user.score_count++;
 
                     bool success = true;
 
-                    // TKK WRITE TO JSON UNDER EXAM
-                    // TKK WRITE TO JSON UNDER USERS
-                    // TKK RETURN SCORE
+                    try {
+                        auto& exam = exams.search(Exam(code))->data;
+                        exam.scores.insert(score);
+                        exam.score_count++;
 
+                        auto& user = users.search(User(uploader))->data;
+                        user.submitted_scores.push_back(score);
+                        user.score_count++;
+
+                    } catch (std::runtime_error& e) {
+                        success = false;
+                    }
+                    
                     json::value response;
                     response[U("success")] = json::value::string(success ? U("true") : U("false"));
                     request.reply(status_codes::OK, response);
