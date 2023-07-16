@@ -649,6 +649,56 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
+                } else if (path == "/search_exam_with_code") {
+                    std::cout << "Searching exam result with code: \n";
+                    json::value response;
+                    
+                    auto username = get_value(post_data, "username");
+                    auto code = get_value(post_data, "code");
+
+                    std::cout << "Client: " << username << std::endl;
+                    std::cout << "Code: " << code << std::endl;
+
+                    auto exam_query = exams.search(Exam(code));
+
+                    if (!exam_query) {
+                        response[U("none")] = false;
+                        request.reply(status_codes::OK, response);
+                        return;
+                    }
+
+                    Exam& exam = exam_query->data;
+
+                    auto score_query = exam.scores.search(Score(username, code));
+
+                    if (!score_query) {
+                        response[U("untaken")] = false;
+                        response[U("title")] = TO_JSON_STRING(exam.title);
+                        response[U("item_count")] = exam.answer_key.get_size();
+                        response[U("score_count")] = exam.score_count;
+                        request.reply(status_codes::OK, response);
+                        return;
+                    }
+
+                    Score& score = score_query->data;
+
+                    json::value answers;
+                    json::value answer_key;
+
+                    for (int i = 0; i < exam.answer_key.get_size(); i++) {
+                        answers[i] = TO_JSON_STRING(score.answers[i]);
+                        answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
+                    }
+
+                    response[U("answers")] = answers;
+                    response[U("answer_key")] = answer_key;
+                    
+                    response[U("item_count")] = exam.answer_key.get_size();
+                    response[U("score_count")] = exam.score_count;
+
+                    request.reply(status_codes::OK, response);
+                    return;
+
                 } else {
 
                 }

@@ -359,7 +359,7 @@ void show_create_exam_ui() {
 
     for (int i = 0; i < number_of_items; i++) {        
         answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
-    } 
+    }
 
     json::value body;
     body[U("uploader")] = TO_JSON_STRING(user->get_username());
@@ -428,6 +428,44 @@ void show_instructor_dashboard() {
     return show_instructor_dashboard();
 }
 
+void show_exam_search_ui() {
+    system(CLEAR_SCREEN);
+
+    std::cout << "======= SEARCH EXAM BY CODE =======\n";
+    auto code = get_line("Exam code: ");
+
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+    body[U("code")] = TO_JSON_STRING(code);
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/search_exam_with_code"), body);
+
+    if (response.has_field(U("none"))) {
+        std::cout << "\nExam does not exist.\n";
+
+        system(PAUSE);
+        return;
+    }
+
+    if (response.has_field(U("untaken"))) {
+        auto title = get_value(response, "title");
+        auto item_count = response.at(U("item_count")).as_integer();
+        auto score_count = response.at(U("score_count")).as_integer();
+
+        std::cout << "\nExam found: " << title << std::endl;
+        std::cout << "Number of items: " << item_count << std::endl;
+        std::cout << "Number of students that took this exam: " << score_count << std::endl << std::endl;
+
+        system(PAUSE);
+        return;
+    }
+
+    // TKKK
+
+    std::cout << "taken the exam alr\n";
+    system(PAUSE);
+}
+
 void show_student_dashboard() {
     system(CLEAR_SCREEN);
 
@@ -437,7 +475,8 @@ void show_student_dashboard() {
     std::cout << std::endl;
     std::cout << "[1] Enter exam code\n";
     std::cout << "[2] View exam history\n";
-    std::cout << "[3] Logout\n";
+    std::cout << "[3] Search exam result with code\n";
+    std::cout << "[4] Logout\n";
 
     auto answer = get_line("\nAnswer: ");
 
@@ -448,6 +487,9 @@ void show_student_dashboard() {
         show_exam_history();
 
     } else if (answer == "3") {
+        show_exam_search_ui();
+
+    } else if (answer == "4") {
         return;
 
     } else {
