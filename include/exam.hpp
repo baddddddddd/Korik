@@ -34,6 +34,16 @@ public:
 
     }
 
+    Exam(const Exam& other) :
+        uploader(other.uploader),
+        title(other.title),
+        exam_code(other.exam_code),
+        answer_key(other.answer_key),
+        scores(other.scores),
+        score_count(other.score_count)
+    {
+    }
+
     bool operator<(const Exam& other) const {
         return exam_code < other.exam_code;
         // return last_name < other.last_name

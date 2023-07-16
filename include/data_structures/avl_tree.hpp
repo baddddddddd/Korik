@@ -19,6 +19,22 @@ private:
         {
         }
 
+        Node* copy_node() {
+            Node* new_node = new Node(data);
+
+            if (left) {
+                new_node->left = left->copy_node();
+                new_node->left->parent = new_node;
+            }
+
+            if (right) {
+                new_node->right = right->copy_node();
+                new_node->right->parent = new_node;
+            }
+
+            return new_node;
+        }
+
         int get_height() {
             return height;
         }
@@ -210,6 +226,15 @@ public:
 
     ~AVLTree() {
         clear();
+    }
+
+    AVLTree(const AVLTree& other) {
+        if (!other.root) {
+            root = NULL;
+            return;
+        }
+
+        root = other.root->copy_node();
     }
 
     Node* get_root() const {

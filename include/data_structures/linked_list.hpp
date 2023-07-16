@@ -22,6 +22,28 @@ public:
         clear();
     }
 
+    LinkedList(const LinkedList& other) {
+        head = NULL;
+        tail = NULL;
+
+        Node* currNode = other.head;
+
+        while (currNode != NULL) {
+            Node* new_node = new Node(currNode->data);
+
+            if (head == NULL) {
+                head = new_node;
+
+            } else {
+                tail->next = new_node;
+            }
+
+            tail = new_node;
+            
+            currNode = currNode->next;
+        }
+    }
+
     T front() {
         return head->data;
     }

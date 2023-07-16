@@ -54,6 +54,23 @@ public:
     {
     }
 
+    User(const User& other) :
+        id(other.id), 
+        username(other.username), 
+        password_hash(other.password_hash),
+        email_address(other.email_address), 
+        last_name(other.last_name), 
+        first_name(other.first_name), 
+        middle_name(other.middle_name),
+        is_instructor(other.is_instructor),
+        exam_count(other.exam_count),
+        score_count(other.score_count),
+        submitted_exams(other.submitted_exams),
+        submitted_scores(other.submitted_scores)
+    {
+
+    }
+
     bool operator<(const User& other) const {
         return username < other.username;
         // return last_name < other.last_name
@@ -128,6 +145,10 @@ public:
         std::cout << "Last Name: " << last_name << "\n";
         std::cout << "First Name: " << first_name << "\n";
         std::cout << "Middle Name: " << middle_name << "\n";
+
+        for (int i = 0; i < score_count; i++) {
+            submitted_scores[i].print_score();
+        }
     }
 };
 

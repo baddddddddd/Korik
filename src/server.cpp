@@ -39,27 +39,8 @@ public:
             user_db = json::value::parse(utility::conversions::to_string_t(json_string));
                         
             for (auto& user_json : user_db.as_array()) {
-                // bool is_instructor = false;
-// 
-                // if (user_json.has_field(U("is_instructor"))) {
-                //     is_instructor = true;
-                // }
-// 
-                // User user(
-                //     "0",
-                //     get_value(user_json, "username"),
-                //     get_value(user_json, "pw_hash"),
-                //     get_value(user_json, "email_address"),
-                //     get_value(user_json, "last_name"),
-                //     get_value(user_json, "first_name"),
-                //     get_value(user_json, "middle_name"),
-                //     is_instructor
-                // );
-
                 auto user = to_user(user_json);
-
                 users.insert(user);
-
                 user_count++;
             }
 
@@ -78,21 +59,6 @@ public:
             exam_db = json::value::parse(utility::conversions::to_string_t(exam_db_string));
                         
             for (auto& exam_json : exam_db.as_array()) {
-                // Exam exam(
-                //     get_value(exam_json, "uploader"),
-                //     get_value(exam_json, "title"),
-                //     get_value(exam_json, "code")
-                // );
-// 
-                // json::value answer_key = exam_json.at(U("answer_key"));
-// 
-                // for (const auto& item : answer_key.as_array()) {
-                //     auto answer_w = item.as_string();
-                //     std::string answer(answer_w.begin(), answer_w.end());
-// 
-                //     exam.answer_key.push_back(answer);
-                // }
-
                 auto exam = to_exam(exam_json);
                 exams.insert(exam);
                 exam_count++;
@@ -104,7 +70,47 @@ public:
     }
 
     ~RestApiHandler() {
-        std::string serialized = utility::conversions::to_utf8string(user_db.serialize());
+        json::value new_user_db;
+        user_count = 0;
+
+        auto current_user = users.subtree_first(users.get_root());
+
+        while (current_user) {
+            User& user = current_user->data;
+            //user.print_info();
+            auto user_json = to_json_value(user);
+            new_user_db[user_count] = user_json;
+            user_count++;
+
+            try {
+                current_user = users.successor(current_user);
+            
+            } catch (std::runtime_error& e) {
+                break;
+            }
+        }
+
+        json::value new_exam_db;
+        exam_count = 0;
+
+        auto current_exam = exams.subtree_first(exams.get_root());
+
+        while (current_exam) {
+            Exam& exam = current_exam->data;
+            //std::cout << exam.exam_code << std::endl;
+            auto exam_json = to_json_value(exam);
+            new_exam_db[exam_count] = exam_json;
+            exam_count++;
+
+            try {
+                current_exam = exams.successor(current_exam);
+            
+            } catch (std::runtime_error& e) {
+                break;
+            }
+        }
+
+        std::string serialized = utility::conversions::to_utf8string(new_user_db.serialize());
         std::ofstream output_file("user_db.json");
 
         if (output_file.is_open()) {
@@ -116,7 +122,8 @@ public:
         }
 
         // Process exam db
-        std::string exam_db_string = utility::conversions::to_utf8string(exam_db.serialize());
+        std::string exam_db_string = utility::conversions::to_utf8string(new_exam_db.serialize());
+        //std::string exam_db_string = utility::conversions::to_utf8string(exam_db.serialize());
         std::ofstream exam_db_file("exam_db.json");
 
         if (exam_db_file.is_open()) {
@@ -183,9 +190,13 @@ public:
         if (!user.submitted_scores.empty()) {
             json::value scores;
 
+            std::cout << "Score count: " << user.score_count << std::endl;
+
             for (int i = 0; i < user.score_count; i++) {
                 scores[i] = to_json_value(user.submitted_scores[i]);
             }
+
+            std::cout << "Scores json: " << utility::conversions::to_utf8string(scores.serialize()) << std::endl;
 
             user_info[U("scores")] = scores;
         }
@@ -265,8 +276,9 @@ public:
         if (user_json.has_field(U("scores"))) {
             auto scores = user_json.at(U("scores")).as_array();
 
-            for (auto& score : scores) {
-                user.submitted_scores.push_back(to_score(score));
+            for (auto& score_json : scores) {
+                auto score = to_score(score_json);
+                user.submitted_scores.push_back(to_score(score_json));
                 user.score_count++;
             }
         }
@@ -597,9 +609,11 @@ public:
 
                     auto& exam = exams.search(Exam(code))->data;
                     exam.scores.insert(score);
+                    exam.score_count++;
 
                     auto& user = users.search(User(uploader))->data;
                     user.submitted_scores.push_back(score);
+                    user.score_count++;
 
                     bool success = true;
 
