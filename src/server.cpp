@@ -700,6 +700,40 @@ public:
                     request.reply(status_codes::OK, response);
                     return;
 
+                } else if (path == "/my_exams") {
+                    std::cout << "Fetching all exams created by: ";
+                    json::value response;
+
+                    auto username = get_value(post_data, "username");
+
+                    std::cout << username << std::endl;
+
+                    auto& user = users.search(User(username))->data;
+
+                    if (user.exam_count == 0) {
+                        response[U("none")] = true;
+                        request.reply(status_codes::OK, response);
+                        return;
+                    }
+
+                    json::value exams;
+
+                    for (int i = 0; i < user.exam_count; i++) {
+                        Exam& exam = user.submitted_exams[i];
+
+                        json::value exam_info;
+
+                        exam_info[U("title")] = TO_JSON_STRING(exam.title);
+                        exam_info[U("code")] = TO_JSON_STRING(exam.exam_code);
+
+                        exams[i] = exam_info;
+                    }
+
+                    response[U("exam_count")] = user.exam_count;
+                    response[U("exams")] = exams;
+                    request.reply(status_codes::OK, response);
+                    return;
+
                 } else {
 
                 }

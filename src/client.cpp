@@ -297,7 +297,6 @@ void show_exam_history() {
         std::cout << "\nSomething went wrong\n";
         system(PAUSE);
     }
-    // TKKK show results
 }
 
 Exam create_exam(std::string title, std::string code, int number_of_items) {
@@ -385,9 +384,76 @@ void show_create_exam_ui() {
     }
 }
 
+void show_item_analysis(std::string code) {
+    system(CLEAR_SCREEN);
+
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+    body[U("code")] = TO_JSON_STRING(code);
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/view_exams"), body);
+
+
+    std::cout << "======= EXAM ITEM ANALYSIS =======\n";
+
+
+    // TKK
+    system(PAUSE);
+}
+
 void show_view_exams_ui() {
     system(CLEAR_SCREEN);
-    // TK
+
+    std::cout << "======= VIEW EXAMS =======\n";
+    
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/my_exams"), body);
+    
+    if (response.has_field(U("none"))) {
+        std::cout << "\nYou have yet to create an exam.\n\n";
+        system(PAUSE);
+        return;
+    }
+
+    auto exam_count = response.at(U("exam_count")).as_integer();
+    auto exams = response.at(U("exams")).as_array();
+
+    std::cout << "\nYou have created a total of " << exam_count << " exams\n";
+
+    int counter = 1;
+    for (auto& exam_json : exams) {
+        auto title = get_value(exam_json, "title");
+        auto code = get_value(exam_json, "code");
+
+        std::cout << counter << ". " << title << " (" << code << ")\n";
+        
+        counter++;
+    }
+
+    int exam_number;
+    
+    while (true) {
+        std::string answer = get_line("\nView Exam No.: ");
+        
+        try {
+            exam_number = std::stoi(answer);
+
+            if (exam_number < 1 || exam_number > exam_count) {
+                throw std::exception();
+            }
+
+            break;
+
+        } catch (std::exception& e) {
+            
+            std::cout << "\nInvalid number. Please try again...\n";
+            system(PAUSE);
+        }
+    }
+
+    auto code = get_value(exams[exam_number - 1], "code");
+    return show_item_analysis(code);
 }
 
 void show_delete_exam_ui() {
