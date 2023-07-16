@@ -333,20 +333,6 @@ public:
 
         try {
             users.insert(user);
-
-            json::value user_info = to_json_value(user);
-            // user_info[U("username")] = TO_JSON_STRING(user.get_username());
-            // user_info[U("email_address")] = TO_JSON_STRING(user.get_email_address());
-            // user_info[U("pw_hash")] = TO_JSON_STRING(user.get_password_hash());
-            // user_info[U("last_name")] = TO_JSON_STRING(user.get_last_name());
-            // user_info[U("first_name")] = TO_JSON_STRING(user.get_first_name());
-            // user_info[U("middle_name")] = TO_JSON_STRING(user.get_middle_name());
-// 
-            // if (is_instructor) {
-            //     user_info[U("is_instructor")] = TO_JSON_STRING("true");
-            // }
-
-            user_db[user_count] = user_info;
             user_count++;
             
             std::cout << "Registered: ";
