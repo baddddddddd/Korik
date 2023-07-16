@@ -125,6 +125,19 @@ public:
 
         return -1;
     }
+
+    void reserve(int size) {
+        capacity = size;
+
+        T* old_arr = arr;
+        arr = new T[capacity];
+
+        for (int i = 0; i < size; i++) {
+            arr[i] = old_arr[i];
+        }
+
+        delete[] old_arr;
+    }
 };
 
 #endif // ARRAY_HPP

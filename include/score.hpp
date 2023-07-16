@@ -1,7 +1,7 @@
 #ifndef SCORE_HPP
 #define SCORE_HPP
 
-#include <data_structures/array.hpp>
+#include "data_structures/array.hpp"
 #include <string>
 
 class Score {

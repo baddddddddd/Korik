@@ -5,6 +5,8 @@
 #include <data_structures/avl_tree.hpp>
 #include <exam.hpp>
 #include <score.hpp>
+#include <result.hpp>
+#include <sorting/merge_sort.hpp>
 
 #include <fstream>
 
@@ -755,8 +757,49 @@ public:
                 } else if (path == "/view_rankings") {
                     std::cout << "Viewing rankings for: ";
 
+                    auto code = get_value(post_data, "code");
+                    auto username = get_value(post_data, "username");
+
+                    std::cout << code << std::endl;
+
+                    User& user = users.search(User(username))->data;
+                    Exam& exam = exams.search(Exam(code))->data;
+
+                    json::value response;
+
+                    if (exam.score_count == 0) {
+                        response[U("none")] = true;
+                        request.reply(status_codes::OK, response);
+                        return;  
+                    }
+
+                    Array<Result> results;
+
+                    AVLTree<Score>::Node* current = NULL;
                     
-                }
+                    for (int i = 0; i < exam.score_count; i++) {
+                        if (!current) {
+                            current = exam.scores.subtree_first(exam.scores.get_root());
+                        } else {
+                            current = exam.scores.successor(current);
+                        }
+
+                        Score& score = current->data;
+                        User& user = users.search(User(score.uploader))->data;
+                        
+                        Result result(&user, &exam, &score);
+                        results.push_back(result);
+                    }
+
+                    merge_sort(results);
+
+                    for (int i = 0; i < results.get_size(); i++) {
+                        std::cout << results[i].grade << std::endl;
+                    }
+                    // COMPUTE SCORES THEN RANKINGS
+
+                    request.reply(status_codes::OK, response);
+                    return;                   
 
                 } else {
 

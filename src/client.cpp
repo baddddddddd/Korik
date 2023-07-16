@@ -427,6 +427,19 @@ Exam to_exam(json::value& json_value) {
     return exam;
 }
 
+void show_rankings(std::string code) {
+    system(CLEAR_SCREEN);
+
+    json::value body;
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+    body[U("code")] = TO_JSON_STRING(code);
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/view_rankings"), body);
+
+    // TKKKK
+
+    system(PAUSE);
+}
+
 void show_item_analysis(std::string code) {
     system(CLEAR_SCREEN);
 
@@ -492,6 +505,8 @@ void show_item_analysis(std::string code) {
     system(PAUSE);
 
     delete[] item_correct;
+
+    return show_rankings(code);
 }
 
 void show_view_exams_ui() {
