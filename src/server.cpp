@@ -391,22 +391,11 @@ public:
     bool create_exam(Exam& exam) {
         try {
             exams.insert(exam);
-
-            json::value exam_info = to_json_value(exam);
-            /// exam_info[U("uploader")] = TO_JSON_STRING(exam.uploader);
-            /// exam_info[U("title")] = TO_JSON_STRING(exam.title);
-            /// exam_info[U("code")] = TO_JSON_STRING(exam.exam_code);
-/// 
-            /// json::value answer_key;
-/// 
-            /// for (int i = 0; i < exam.answer_key.get_size(); i++) {
-            ///     answer_key[i] = TO_JSON_STRING(exam.answer_key[i]);
-            /// }
-/// 
-            /// exam_info[U("answer_key")] = answer_key;
-
-            exam_db[exam_count] = exam_info;
             exam_count++;
+
+            auto& user = users.search(User(exam.uploader))->data;
+            user.submitted_exams.push_back(exam);
+            user.exam_count++;
 
             std::cout << "Created exam: \n";
             std::cout << "Uploader: " << exam.uploader << std::endl;
