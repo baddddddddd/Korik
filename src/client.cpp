@@ -435,8 +435,36 @@ void show_rankings(std::string code) {
     body[U("code")] = TO_JSON_STRING(code);
     auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/view_rankings"), body);
 
-    // TKKKK
+    auto title = get_value(response, "title");
+    auto score_count = response.at(U("score_count")).as_integer();
+    auto perfect = response.at(U("perfect")).as_integer();
 
+    std::cout << "======= RANKINGS =======\n";
+    std::cout << "Title: " << title << std::endl;
+
+    if (response.has_field(U("none"))) {
+        std::cout << "\nNo one has taken this exam yet.\n";
+        system(PAUSE);
+        return;
+    }    
+
+    auto rankings = response.at(U("rankings")).as_array();
+    int counter = 1;
+    
+    for (auto& result : rankings) {
+        auto last_name = get_value(result, "last_name");
+        auto first_name = get_value(result, "first_name");
+        auto middle_name = get_value(result, "middle_name");
+        int grade = result.at(U("grade")).as_integer();
+
+        std::string display_name = last_name + ", " + first_name + " " + middle_name;
+
+        float percentage = ((float)grade / perfect) * 100;
+        std::cout << counter << ". " << display_name << " (" << grade << "/" << perfect << " = " << percentage << "%)\n";
+        counter++;
+    }
+
+    std::cout << std::endl;
     system(PAUSE);
 }
 

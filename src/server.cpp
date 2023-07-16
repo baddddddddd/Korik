@@ -793,11 +793,26 @@ public:
 
                     merge_sort(results);
 
-                    for (int i = 0; i < results.get_size(); i++) {
-                        std::cout << results[i].grade << std::endl;
-                    }
-                    // COMPUTE SCORES THEN RANKINGS
+                    json::value rankings;
+                    int counter = 0;
 
+                    for (int i = results.get_size() - 1; i >= 0; i--) {
+                        Result& result = results[i];
+
+                        json::value result_json;
+                        result_json[U("last_name")] = TO_JSON_STRING(result.user->get_last_name());
+                        result_json[U("first_name")] = TO_JSON_STRING(result.user->get_first_name());
+                        result_json[U("middle_name")] = TO_JSON_STRING(result.user->get_middle_name());
+                        result_json[U("grade")] = result.grade;
+
+                        rankings[counter] = result_json;
+                        counter++;
+                    }
+
+                    response[U("title")] = TO_JSON_STRING(exam.title);
+                    response[U("score_count")] = exam.score_count;
+                    response[U("rankings")] = rankings;
+                    response[U("perfect")] = exam.answer_key.get_size();
                     request.reply(status_codes::OK, response);
                     return;                   
 
