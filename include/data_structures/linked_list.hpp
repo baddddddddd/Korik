@@ -180,25 +180,45 @@ public:
         delete current;
     }
 
-    void remove(const T value) {
-        Node* currNode = head;
-        Node* prevNode = NULL;
-        while (currNode != NULL) {
-            if (currNode->data == value) {
-                if (prevNode == NULL) {
-                    head = currNode->next;
-                } else {
-                    prevNode->next = currNode->next;
-                }
-                if (currNode == tail) {
-                    tail = prevNode;
-                }
-                delete currNode;
+    void remove(const T& value) {
+        Node* current = head;
+        
+        for (int i = 0; current; i++) {
+            if (current->data == value) {
+                erase(i);
                 return;
             }
-            prevNode = currNode;
-            currNode = currNode->next;
+
+            current = current->next;
         }
+    }
+
+    Node* search(const T& value) {
+        Node* current = head;
+        
+        for (int i = 0; current; i++) {
+            if (current->data == value) {
+                return current;
+            }
+
+            current = current->next;
+        }
+
+        return NULL;
+    }
+
+    int get_index(const T& value) {
+        Node* current = head;
+        
+        for (int i = 0; current; i++) {
+            if (current->data == value) {
+                return i;
+            }
+
+            current = current->next;
+        }
+
+        return -1;
     }
 
     bool empty() const {

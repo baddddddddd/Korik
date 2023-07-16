@@ -264,13 +264,32 @@ public:
     }
 
     void remove(const T& value) {
-        auto node = search(value);
-        remove_node(node);
+        AVLTree<T>* new_tree = new AVLTree<T>;
 
-        auto& parent_link = (node->parent->left == node) ? node->parent->left : node->parent->right;
-        parent_link = NULL;
+        Node* current = subtree_first(root);
 
-        auto current = node->parent;
+        while (current) {
+            try {
+                if (current->data != value) {
+                    new_tree->insert(current->data);
+                }
+
+                current = successor(current);
+
+            } catch (std::runtime_error& e) {
+                break;
+            } 
+        }
+        
+        clear();
+        root = new_tree->root;
+        // auto node = search(value);
+        // remove_node(node);
+// 
+        // auto& parent_link = (node->parent->left == node) ? node->parent->left : node->parent->right;
+        // parent_link = NULL;
+// 
+        // auto current = node->parent;
     }
 
     Node* subtree_first(Node* node) {

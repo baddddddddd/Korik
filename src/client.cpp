@@ -586,6 +586,7 @@ void show_view_exams_ui() {
             
             std::cout << "\nInvalid number. Please try again...\n";
             system(PAUSE);
+            return;
         }
     }
 
@@ -595,7 +596,24 @@ void show_view_exams_ui() {
 
 void show_delete_exam_ui() {
     system(CLEAR_SCREEN);
-    // TK
+
+    std::cout << "======= DELETING EXAM =======\n";
+    auto code = get_line("Exam code: ");
+
+    json::value body;
+    body[U("code")] = TO_JSON_STRING(code);
+    body[U("username")] = TO_JSON_STRING(user->get_username());
+    auto response = send_post_request(utility::conversions::to_string_t(SERVER_URL + "/delete_exam"), body);
+
+    if (response.has_field(U("fail"))) {
+        std::cout << "\nExam code does not exist.\n";
+        system(PAUSE);
+        return;
+    }
+
+    std::cout << "\nSuccessfully deleted exam.\n";
+    system(PAUSE);
+        
 }
 
 void show_instructor_dashboard() {

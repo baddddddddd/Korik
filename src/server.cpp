@@ -816,6 +816,56 @@ public:
                     request.reply(status_codes::OK, response);
                     return;                   
 
+                } else if (path == "/delete_exam") {
+                    std::cout << "Deleting exam: ";
+                    json::value response;
+
+                    auto code = get_value(post_data, "code");
+                    auto username = get_value(post_data, "username");
+
+                    std::cout << code << std::endl;
+
+                    User& user = users.search(User(username))->data;
+
+                    auto exam_query = exams.search(Exam(code));
+                    auto owned_query = user.submitted_exams.search(Exam(code));
+
+                    if (!exam_query || !owned_query) {
+                        response[U("fail")] = true;
+                        request.reply(status_codes::OK, response);
+                        return;
+                    }
+
+                    user.submitted_exams.remove(Exam(code));
+                    user.exam_count--;
+
+                    exams.remove(Exam(code));
+                    exam_count--;
+
+                    AVLTree<User>::Node* current = NULL;
+
+                    for (int i = 0; i < user_count; i++) {
+                        if (!current) {
+                            current = users.subtree_first(users.get_root());
+                        } else {
+                            current = users.successor(current);
+                        }
+
+                        User& current_user = current->data;
+
+                        Score to_compare(current_user.get_username(), code);
+                        to_compare.compare_code = true;
+
+                        if (current_user.submitted_scores.search(to_compare)) {
+                            current_user.submitted_scores.remove(to_compare);
+                            current_user.score_count--;
+                        }
+                    }
+
+                    response[U("success")] = true;
+                    request.reply(status_codes::OK, response);
+                    return;
+                
                 } else {
 
                 }

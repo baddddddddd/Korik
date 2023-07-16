@@ -12,6 +12,8 @@ public:
     std::string exam_code;
     Array<std::string> answers;
 
+    bool compare_code = false;
+
     Score(std::string uploader, std::string exam_code)
         : uploader(uploader), exam_code(exam_code)
     {
@@ -23,41 +25,43 @@ public:
     }
 
     bool operator<(const Score& other) const {
+        if (compare_code || other.compare_code) {
+            return exam_code < other.exam_code;
+        }
+
         return uploader < other.uploader;
-        // return last_name < other.last_name
-        //     && first_name < other.first_name
-        //     && middle_name < other.middle_name;
     }
 
     bool operator>(const Score& other) const {
+        if (compare_code || other.compare_code) {
+            return exam_code > other.exam_code;
+        }
+
         return uploader > other.uploader;
-        // return last_name > other.last_name
-        //     && first_name > other.first_name
-        //     && middle_name > other.middle_name;
     }
 
     bool operator<=(const Score& other) const {
+        if (compare_code || other.compare_code) {
+            return exam_code <= other.exam_code;
+        }
+
         return uploader <= other.uploader;
-        // return last_name <= other.last_name
-        //     && first_name <= other.first_name
-        //     && middle_name <= other.middle_name;
     }
 
     bool operator>=(const Score& other) const {
+        if (compare_code || other.compare_code) {
+            return exam_code >= other.exam_code;
+        }
+
         return uploader >= other.uploader;
-        // return last_name >= other.last_name
-        //     && first_name >= other.first_name
-        //     && middle_name >= other.middle_name;
     }
 
     bool operator==(const Score& other) const {
-        return uploader == other.uploader;
+        if (compare_code || other.compare_code) {
+            return exam_code == other.exam_code;
+        }
 
-        // bool has_same_exam_code = exam_code == other.exam_code;
-        // bool has_same_email = email_address == other.email_address;
-        // bool has_same_name = last_name == other.last_name && first_name == other.first_name && middle_name == other.middle_name;
-        // 
-        // return has_same_exam_code || has_same_email || has_same_name;
+        return uploader == other.uploader;
     }
 
     bool operator!=(const Score& other) const {
